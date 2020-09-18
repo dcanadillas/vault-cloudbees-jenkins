@@ -1,0 +1,198 @@
+credentials:
+  system:
+    domainCredentials:
+    - credentials:
+      - vaultTokenCredential:
+          description: "A Vault demo"
+          id: "demovault"
+          scope: GLOBAL
+          token: "{AQAAABAAAAAgLDHU2dZhXG0C+JZqddvAJoJjGja0O+/wERnTcNo6ySXMcueSKDxrAVGhJAhBgPQT}"
+      - vaultUsernamePasswordCredentialImpl:
+          engineVersion: 2
+          id: "30570307-9e70-4f34-bd28-eed1882fbd61"
+          passwordKey: "jenkins"
+          path: "userpass"
+          scope: GLOBAL
+          usernameKey: "jenkins"
+jenkins:
+  agentProtocols:
+  - "JNLP4-connect"
+  - "Ping"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: false
+  disableRememberMe: false
+  disabledAdministrativeMonitors:
+  - "com.cloudbees.jenkins.support.impl.cloudbees.TcpSlaveAgentListenerMonitor"
+  labelAtoms:
+  - name: "master"
+  markupFormatter: "plainText"
+  mode: NORMAL
+  myViewsTabBar: "standard"
+  numExecutors: 2
+  primaryView:
+    all:
+      name: "all"
+  projectNamingStrategy: "standard"
+  quietPeriod: 5
+  remotingSecurity:
+    enabled: true
+  scmCheckoutRetryCount: 0
+  securityRealm:
+    local:
+      allowsSignup: false
+      enableCaptcha: false
+      users:
+        - id: "admin"
+          password: "admin"
+      # users:
+      # - id: "admin"
+      #   name: "admin"
+      #   properties:
+      #   - "apiToken"
+      #   - favoriting:
+      #       autofavoriteEnabled: true
+      #   - "favorite"
+      #   - "myView"
+      #   - preferredProvider:
+      #       providerId: "default"
+      #   - "timezone"
+      #   - mailer:
+      #       emailAddress: "admin@hashicorp.com"
+  slaveAgentPort: 50000
+  updateCenter:
+    sites:
+    - id: "cloudbees-jenkins-distribution-offline"
+      url: "file:/var/cloudbees-jenkins-distribution/war/WEB-INF/plugins/update-center.json"
+    - id: "cap-cloudbees-jenkins-distribution"
+      url: "https://jenkins-updates.cloudbees.com/update-center/envelope-cloudbees-jenkins-distribution/update-center.json"
+  views:
+  - all:
+      name: "all"
+  viewsTabBar: "standard"
+beekeeper:
+  enabled: true
+  securityWarnings:
+    enabledForCore: true
+    enabledForPlugins: true
+  upgrades:
+    autoDowngradePlugins: false
+    autoUpgradePlugins: false
+security:
+  anonymizeSupportBundle:
+    enabled: false
+  apiToken:
+    creationOfLegacyTokenEnabled: false
+    tokenGenerationOnCreationEnabled: false
+    usageStatisticsEnabled: true
+  sSHD:
+    port: -1
+unclassified:
+  bitbucketEndpointConfiguration:
+    endpoints:
+    - bitbucketCloudEndpoint:
+        enableCache: false
+        manageHooks: false
+        repositoriesCacheDuration: 0
+        teamCacheDuration: 0
+  buildDiscarders:
+    configuredBuildDiscarders:
+    - "jobBuildDiscarder"
+  defaultFolderConfiguration:
+    healthMetrics:
+    - worstChildHealthMetric:
+        recursive: true
+  experimentalPlugins:
+    enabled: false
+  extendedEmailPublisher:
+    adminRequiredForTemplateTesting: false
+    allowUnregisteredEnabled: false
+    charset: "UTF-8"
+    debugMode: false
+    defaultBody: "$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:\r\n\r\nCheck\
+      \ console output at $BUILD_URL to view the results."
+    defaultContentType: "text/plain"
+    defaultSubject: "$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!"
+    maxAttachmentSize: -1
+    maxAttachmentSizeMb: 0
+    precedenceBulk: false
+    useSsl: false
+    watchingEnabled: false
+  gitHubConfiguration:
+    apiRateLimitChecker: ThrottleForNormalize
+  gitHubPluginConfig:
+    hookUrl: "http://localhost:8080/github-webhook/"
+  gitSCM:
+    createAccountBasedOnEmail: false
+    showEntireCommitSummaryInChanges: false
+    useExistingAccountWithSameEmail: false
+  hashicorpVault:
+    configuration:
+      engineVersion: 2
+      timeout: 60
+      vaultCredentialId: "demovault"
+      vaultUrl: "http://localhost:8200"
+  location:
+    adminAddress: "address not configured yet <nobody@nowhere>"
+    url: "http://localhost:8080/"
+  mailer:
+    charset: "UTF-8"
+    useSsl: false
+    useTls: false
+  pollSCM:
+    pollingThreadCount: 10
+  usageStatisticsCloudBees:
+    usageStatisticsCollected: true
+tool:
+  git:
+    installations:
+    - home: "git"
+      name: "Default"
+jobs:
+  - script: >
+      folder('HashiCorp')
+  - script: >
+      pipelineJob('HashiCorp/vault-tf-demo') {
+        parameters {
+          stringParam('vaulturl', 'http://localhost:8200', 'Vault API URL')
+          stringParam('vaultpath', 'kv/cicd', 'Secrets path for Vault secrets')
+          stringParam('tfe_org', 'hc-dcanadillas', 'TFE Organization')
+          stringParam('tfe_wkspc_id', 'ws-eAJzKDto569WUEpj', 'TFE Workspace ID')
+        }
+        definition {
+          cps {
+            script("""
+              pipeline {
+                agent any
+                stages {
+                  stage ('Vault') {
+                    steps {
+                      echo 'Showing Vault access'
+                      withVault(configuration: [timeout: 60,vaultCredentialId: 'demovault', vaultUrl: "\^${params.vaulturl}"], vaultSecrets: [[path: "\^${params.vaultpath}", secretValues: [[envVar: "myuser", vaultKey: "jenkins_pwd"]]]]) {
+                          echo "\^${env.myuser}"
+                          sh '''
+                          ls
+                          '''
+                      }
+                    }
+                  }
+                  stage ('Terraform') {
+                    steps {
+                      withVault(configuration: [failIfNotFound: true, timeout: 10, vaultCredentialId: 'demovault', vaultUrl: "\^${params.vaulturl}"], vaultSecrets: [[path: "\^${params.vaultpath}", secretValues: [[envVar: 'tfe_token', vaultKey: 'tfe_token'],[envVar: 'tfe_dev', vaultKey: 'tfe_dev']]]]) {
+                        echo "\^${env.tfe_token}"
+                        sh '''
+                          echo "Hello"
+                          curl -H "Authorization: Bearer \^${env.tfe_token}" -H "Content-Type: application/vnd.api+json" -X GET "https://app.terraform.io/api/v2/organizations/\^${params.tfe_org}/workspaces"
+                          curl -H "Authorization: Bearer \^${env.tfe_dev}" -H "Content-Type: application/vnd.api+json" -X POST -d '{"data": {"attributes": {"is-destroy": false,"message": "Jenkins Demo run"},"type":"runs","relationships": {"workspace": {"data": {"type": "workspaces","id": "\^${params.tfe_wkspc_id}"}}}}}' "https://app.terraform.io/api/v2/runs"
+                        '''
+                      }
+                    }
+                  }
+                }
+              }""".stripIndent())
+          }
+        }
+      }
