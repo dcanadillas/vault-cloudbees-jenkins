@@ -9,11 +9,11 @@ credentials:
           token: "{AQAAABAAAAAgLDHU2dZhXG0C+JZqddvAJoJjGja0O+/wERnTcNo6ySXMcueSKDxrAVGhJAhBgPQT}"
       - vaultUsernamePasswordCredentialImpl:
           engineVersion: 2
-          id: "30570307-9e70-4f34-bd28-eed1882fbd61"
-          passwordKey: "jenkins"
-          path: "userpass"
+          id: "github_vault"
+          passwordKey: "gh_token"
+          path: "kv/cicd"
           scope: GLOBAL
-          usernameKey: "jenkins"
+          usernameKey: "gh_user"
 jenkins:
   agentProtocols:
   - "JNLP4-connect"
@@ -159,7 +159,6 @@ jobs:
         parameters {
           stringParam('vaulturl', 'http://localhost:8200', 'Vault API URL')
           stringParam('vaultpath', 'kv/cicd', 'Secrets path for Vault secrets')
-          stringParam('tfe_org', 'hc-dcanadillas', 'TFE Organization')
           stringParam('tfe_wkspc_id', 'ws-eAJzKDto569WUEpj', 'TFE Workspace ID')
         }
         definition {
@@ -181,11 +180,11 @@ jobs:
                   }
                   stage ('Terraform') {
                     steps {
-                      withVault(configuration: [failIfNotFound: true, timeout: 10, vaultCredentialId: 'demovault', vaultUrl: "\^${params.vaulturl}"], vaultSecrets: [[path: "\^${params.vaultpath}", secretValues: [[envVar: 'tfe_token', vaultKey: 'tfe_token'],[envVar: 'tfe_dev', vaultKey: 'tfe_dev']]]]) {
+                      withVault(configuration: [failIfNotFound: true, timeout: 10, vaultCredentialId: 'demovault', vaultUrl: "\^${params.vaulturl}"], vaultSecrets: [[path: "\^${params.vaultpath}", secretValues: [[envVar: 'tfe_token', vaultKey: 'tfe_token'],[envVar: 'tfe_dev', vaultKey: 'tfe_dev'],[envVar: 'tfe_org', vaultKey: 'tfe_org']]]]) {
                         echo "\^${env.tfe_token}"
                         sh '''
                           echo "Hello"
-                          curl -H "Authorization: Bearer \^${env.tfe_token}" -H "Content-Type: application/vnd.api+json" -X GET "https://app.terraform.io/api/v2/organizations/\^${params.tfe_org}/workspaces"
+                          curl -H "Authorization: Bearer \^${env.tfe_token}" -H "Content-Type: application/vnd.api+json" -X GET "https://app.terraform.io/api/v2/organizations/\^${env.tfe_org}/workspaces"
                           curl -H "Authorization: Bearer \^${env.tfe_dev}" -H "Content-Type: application/vnd.api+json" -X POST -d '{"data": {"attributes": {"is-destroy": false,"message": "Jenkins Demo run"},"type":"runs","relationships": {"workspace": {"data": {"type": "workspaces","id": "\^${params.tfe_wkspc_id}"}}}}}' "https://app.terraform.io/api/v2/runs"
                         '''
                       }
@@ -193,6 +192,18 @@ jobs:
                   }
                 }
               }""".stripIndent())
+              sandbox()
+          }
+        }
+      }
+  - script: >
+      multibranchPipelineJob('HashiCorp/vault-multi-github') {
+        branchSources {
+          github {
+            id('123456789')
+            scanCredentialsId('github_vault')
+            repoOwner('dcanadillas')
+            repository('jenkinsfile-vaultplugin')
           }
         }
       }

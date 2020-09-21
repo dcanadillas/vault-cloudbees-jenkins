@@ -25,7 +25,7 @@ docker run \
 -p 8181:8080 \
 -p 50000:50000 \
 -p 33500:33500 \
--v $HOME/cb-jenkins-data:/var/cloudbees-jenkins-distribution \
+-v $HOME/cb-jenkins-data-demo:/var/cloudbees-jenkins-distribution \
 -v /var/run/docker.sock:/var/run/docker.sock \
 hashidemo/cloudbees-jenkins-distro-jcasc:2.149.1.2
 ```

@@ -1,0 +1,130 @@
+master:
+  nameOverride: "cjd"
+  componentName: "jenkins-master"
+  image: "jenkins/jenkins"
+  tag: "lts"
+  imagePullPolicy: "Always"
+  imagePullSecretName:
+  serviceType: NodePort
+  # image: "dcanadillas/cloudbees-jenkins-distro-jcasc"
+  # tag: "2.249.1.2"
+  installPlugins:
+    - kubernetes:1.27.1
+    - workflow-job:2.39
+    - workflow-aggregator:2.6
+    - credentials-binding:1.23
+    - cloudbees-folder:6.14
+    - structs:1.20
+    - git:4.4.3
+    - configuration-as-code:1.43
+    - job-dsl:1.77
+    - github-branch-source:2.9.0
+    - blueocean:1.24.0
+  additionalPlugins:
+    - hashicorp-vault-plugin:3.6.1
+    # - simple-theme-plugin:0.6
+    - theme-manager:0.5
+    - dark-theme:0.0.8
+  JCasC:
+    enabled: true
+    defaultConfig: true
+    configScripts:
+      local-auth: |
+        jenkins:
+          authorizationStrategy:
+            loggedInUsersCanDoAnything:
+              allowAnonymousRead: false
+          securityRealm:
+            local:
+              allowsSignup: true
+              enableCaptcha: false
+              users:
+              - id: "admin"
+                password: "admin"
+      master-config: |
+        credentials:
+          system:
+            domainCredentials:
+            - credentials:
+              - vaultTokenCredential:
+                  description: "A Vault demo"
+                  id: "demovault"
+                  scope: GLOBAL
+                  token: "{AQAAABAAAAAgLDHU2dZhXG0C+JZqddvAJoJjGja0O+/wERnTcNo6ySXMcueSKDxrAVGhJAhBgPQT}"
+              - vaultUsernamePasswordCredentialImpl:
+                  engineVersion: 2
+                  id: "github_vault"
+                  passwordKey: "gh_token"
+                  path: "kv/cicd"
+                  scope: GLOBAL
+                  usernameKey: "gh_user"
+        tool:
+          git:
+            installations:
+            - home: "git"
+              name: "Default"
+        unclassified:
+          hashicorpVault:
+            configuration:
+              engineVersion: 2
+              timeout: 60
+              vaultCredentialId: "demovault"
+              vaultUrl: "http://vault.vault.svc.cluster.local:8200"
+      list-jobs: |
+        jobs:
+          - script: >
+              folder('HashiCorp')
+          - script: >
+              pipelineJob('HashiCorp/vault-tf-demo') {
+                parameters {
+                  stringParam('vaulturl', 'http://localhost:8200', 'Vault API URL')
+                  stringParam('vaultpath', 'kv/cicd', 'Secrets path for Vault secrets')
+                  stringParam('tfe_org', 'hc-dcanadillas', 'TFE Organization')
+                  stringParam('tfe_wkspc_id', 'ws-eAJzKDto569WUEpj', 'TFE Workspace ID')
+                }
+                definition {
+                  cps {
+                    script("""
+                      pipeline {
+                        agent any
+                        stages {
+                          stage ('Vault') {
+                            steps {
+                              echo 'Showing Vault access'
+                              withVault(configuration: [timeout: 60,vaultCredentialId: 'demovault', vaultUrl: "\^${params.vaulturl}"], vaultSecrets: [[path: "\^${params.vaultpath}", secretValues: [[envVar: "myuser", vaultKey: "jenkins_pwd"]]]]) {
+                                  echo "\^${env.myuser}"
+                                  sh '''
+                                  ls
+                                  '''
+                              }
+                            }
+                          }
+                          stage ('Terraform') {
+                            steps {
+                              withVault(configuration: [failIfNotFound: true, timeout: 10, vaultCredentialId: 'demovault', vaultUrl: "\^${params.vaulturl}"], vaultSecrets: [[path: "\^${params.vaultpath}", secretValues: [[envVar: 'tfe_token', vaultKey: 'tfe_token'],[envVar: 'tfe_dev', vaultKey: 'tfe_dev']]]]) {
+                                echo "\^${env.tfe_token}"
+                                sh '''
+                                  echo "Hello"
+                                  curl -H "Authorization: Bearer \^${env.tfe_token}" -H "Content-Type: application/vnd.api+json" -X GET "https://app.terraform.io/api/v2/organizations/\^${params.tfe_org}/workspaces"
+                                  curl -H "Authorization: Bearer \^${env.tfe_dev}" -H "Content-Type: application/vnd.api+json" -X POST -d '{"data": {"attributes": {"is-destroy": false,"message": "Jenkins Demo run"},"type":"runs","relationships": {"workspace": {"data": {"type": "workspaces","id": "\^${params.tfe_wkspc_id}"}}}}}' "https://app.terraform.io/api/v2/runs"
+                                '''
+                              }
+                            }
+                          }
+                        }
+                      }""".stripIndent())
+                      sandbox()
+                  }
+                }
+              }
+          - script: >
+              multibranchPipelineJob('HashiCorp/vault-multi-github') {
+                branchSources {
+                  github {
+                    id('123456789')
+                    scanCredentialsId('github_vault')
+                    repoOwner('dcanadillas')
+                    repository('jenkinsfile-vaultplugin')
+                  }
+                }
+              }
