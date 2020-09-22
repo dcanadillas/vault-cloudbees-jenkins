@@ -2,6 +2,8 @@
 
 This is a repo to configure your own [CloudBees Jenkins Distribution]() to demo your own [Vault]() integration using the [Vault Plugin]() for Jenkins.
 
+You are going to use a local docker container to run your CloudBees Jenkins Distribution, but if you want to do it using Jenkins OSS deployed on Kubernetes you can go [here](#if-you-want-to-run-jenkins-oss-in-kubernetes).
+
 ## Requirements
 
 * Docker installed in your machine
@@ -93,7 +95,7 @@ If you want the configured pipelines in Jenkins to be successfuly run, you need 
   EOF
   ```
 
-# ... if you want to run Jenkins OSS in Kubernetes
+# If you want to run Jenkins OSS in Kubernetes
 
 I have added two more resources in this repo if you want to run Jenkins OSS and Vault demo in Kubernetes:
 
