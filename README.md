@@ -99,7 +99,7 @@ If you want the configured pipelines in Jenkins to be successfuly run, you need 
 
 I have added two more resources in this repo if you want to run Jenkins OSS and Vault demo in Kubernetes:
 
-* Deploy Jenkins OSS with a `values.yaml` and `config-as-code` [manually using Helm](./k8s-jenkins_oss/README.md)
-* Deploy Jenkins OSS and Vault in your K8s cluster [usign Terraform](./terraform-jenkins-vault/README.md)
+* Deploy Jenkins OSS with a `values.yaml` and `config-as-code` [manually using Helm](./k8s-jenkins_oss/)
+* Deploy Jenkins OSS and Vault in your K8s cluster [usign Terraform](./terraform-jenkins-vault/)
 
 
