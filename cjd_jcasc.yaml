@@ -14,6 +14,13 @@ credentials:
           path: "kv/cicd"
           scope: GLOBAL
           usernameKey: "gh_user"
+      - vaultAppRoleCredential:
+          description: "An AppRole Vault auth"
+          id: "vault-app-role"
+          path: "approle"
+          roleId: "5e761da2-3bae-f3fa-3c35-c754f5e88f01"
+          scope: GLOBAL
+          secretId: "{AQAAABAAAAAw0+uLsnnQONMaiUaSB7MecX5YdJt/2M3Vzt84LbtLCU8VSpACyFYF7mVl4GL4Rkll0/Uwjvub8x03xEB0zk7A+A==}"
 jenkins:
   agentProtocols:
   - "JNLP4-connect"

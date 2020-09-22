@@ -1,5 +1,5 @@
 master:
-  nameOverride: "cjd"
+  nameOverride: "jenkins-vault"
   componentName: "jenkins-master"
   image: "jenkins/jenkins"
   tag: "lts"
@@ -50,7 +50,7 @@ master:
                   description: "A Vault demo"
                   id: "demovault"
                   scope: GLOBAL
-                  token: "{AQAAABAAAAAgLDHU2dZhXG0C+JZqddvAJoJjGja0O+/wERnTcNo6ySXMcueSKDxrAVGhJAhBgPQT}"
+                  token: "{root}"
               - vaultUsernamePasswordCredentialImpl:
                   engineVersion: 2
                   id: "github_vault"
@@ -84,7 +84,7 @@ master:
           - script: >
               pipelineJob('HashiCorp/vault-tf-demo') {
                 parameters {
-                  stringParam('vaulturl', 'http://localhost:8200', 'Vault API URL')
+                  stringParam('vaulturl', 'http://vault.vault.svc.cluster.local:8200', 'Vault API URL')
                   stringParam('vaultpath', 'kv/cicd', 'Secrets path for Vault secrets')
                   stringParam('tfe_org', 'hc-dcanadillas', 'TFE Organization')
                   stringParam('tfe_wkspc_id', 'ws-eAJzKDto569WUEpj', 'TFE Workspace ID')
@@ -110,11 +110,11 @@ master:
                             steps {
                               withVault(configuration: [failIfNotFound: true, timeout: 10, vaultCredentialId: 'demovault', vaultUrl: "\^${params.vaulturl}"], vaultSecrets: [[path: "\^${params.vaultpath}", secretValues: [[envVar: 'tfe_token', vaultKey: 'tfe_token'],[envVar: 'tfe_dev', vaultKey: 'tfe_dev']]]]) {
                                 echo "\^${env.tfe_token}"
-                                sh '''
+                                sh """
                                   echo "Hello"
                                   curl -H "Authorization: Bearer \^${env.tfe_token}" -H "Content-Type: application/vnd.api+json" -X GET "https://app.terraform.io/api/v2/organizations/\^${params.tfe_org}/workspaces"
                                   curl -H "Authorization: Bearer \^${env.tfe_dev}" -H "Content-Type: application/vnd.api+json" -X POST -d '{"data": {"attributes": {"is-destroy": false,"message": "Jenkins Demo run"},"type":"runs","relationships": {"workspace": {"data": {"type": "workspaces","id": "\^${params.tfe_wkspc_id}"}}}}}' "https://app.terraform.io/api/v2/runs"
-                                '''
+                                """
                               }
                             }
                           }
