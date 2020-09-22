@@ -18,9 +18,9 @@ provider "helm" {
     # client_certificate = var.client_certificate
     # client_key = var.client_key
     # cluster_ca_certificate = var.ca_certificate
-    client_certificate = file("/Users/dcanadillas/.minikube/profiles/vault-k8s/client.crt")
-    client_key = file("/Users/dcanadillas/.minikube/profiles/vault-k8s/client.key")
-    cluster_ca_certificate = file("/Users/dcanadillas/.minikube/ca.crt")
+    client_certificate = file(var.client_certificate)
+    client_key = file(var.client_key)
+    cluster_ca_certificate = file(var.ca_certificate)
   }
 }
 provider "kubernetes" {

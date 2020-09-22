@@ -38,5 +38,5 @@ variable "vault_dev" {
 }
 variable "values_storage" {
   description = "Local or GCS storage for your values_yaml files"
-  #default = "gcs"
+  default = "gcs"
 }
