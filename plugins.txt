@@ -3,3 +3,7 @@ hashicorp-vault-plugin:3.6.1
 # simple-theme-plugin:0.6
 theme-manager:0.5
 job-dsl:1.77
+credentials-binding:1.23
+plain-credentials:1.7
+ssh-credentials:1.18.1
+structs:1.20

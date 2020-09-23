@@ -1,0 +1,36 @@
+version: '3'
+services:
+  vault:
+    image: vault
+    container_name: vault
+    ports:
+      - "9200:8200"
+    restart: always
+    volumes:
+      - $HOME/vault-demo/logs:/vault/logs
+      - $HOME/vault-demo/file:/vault/file
+      - $HOME/vault-demo/config:/vault/config
+    cap_add:
+      - IPC_LOCK
+    command: [ 'server' ]
+    environment:
+      # VAULT_DEV_ROOT_TOKEN_ID: "root"
+      VAULT_LOCAL_CONFIG: '{"backend": {"file": {"path": "/vault/file"}},"ui":true, "listener": {"tcp":{"tls_disable": true,"address": "0.0.0.0:8200"}},"api_addr": "http://127.0.0.1:8200"}'
+      VAULT_ADDR: "http://127.0.0.1:8200"
+    # entrypoint: vault server -config=/vault/config/
+  cjd:
+    #image: hashidemo/cloudbees-jenkins-distro-jcasc:2.149.1.2
+    build:
+      context: .
+    container_name: cjd
+    user: root
+    restart: always
+    ports:
+      - "8181:8080"
+      - "50000:50000"
+      - "33500:33500"
+    user: root
+    volumes:
+      - $HOME/cb-jenkins-data-demo:/var/cloudbees-jenkins-distribution
+      - /var/run/docker.sock:/var/run/docker.sock
+    

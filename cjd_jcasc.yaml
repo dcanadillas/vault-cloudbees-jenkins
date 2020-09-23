@@ -98,13 +98,6 @@ security:
   sSHD:
     port: -1
 unclassified:
-  bitbucketEndpointConfiguration:
-    endpoints:
-    - bitbucketCloudEndpoint:
-        enableCache: false
-        manageHooks: false
-        repositoriesCacheDuration: 0
-        teamCacheDuration: 0
   buildDiscarders:
     configuredBuildDiscarders:
     - "jobBuildDiscarder"
@@ -141,7 +134,7 @@ unclassified:
       engineVersion: 2
       timeout: 60
       vaultCredentialId: "demovault"
-      vaultUrl: "http://localhost:8200"
+      vaultUrl: "http://vault:8200"
   location:
     adminAddress: "address not configured yet <nobody@nowhere>"
     url: "http://localhost:8080/"
@@ -164,7 +157,7 @@ jobs:
   - script: >
       pipelineJob('HashiCorp/vault-tf-demo') {
         parameters {
-          stringParam('vaulturl', 'http://localhost:8200', 'Vault API URL')
+          stringParam('vaulturl', 'http://vault:8200', 'Vault API URL')
           stringParam('vaultpath', 'kv/cicd', 'Secrets path for Vault secrets')
           stringParam('tfe_wkspc_id', 'ws-eAJzKDto569WUEpj', 'TFE Workspace ID')
         }
