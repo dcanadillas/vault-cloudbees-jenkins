@@ -23,7 +23,7 @@ In this repo you have a `docker-compose.yaml` file that has the description to s
 So, to run your instances in Docker, just execute (from the rooth path of this repo):
 
 ```bash
-docker-compose up --build 2>&1>/dev/null &
+docker-compose up --build > /dev/null 2>&1 & 
 ```
 
 To see the logs for each container:
